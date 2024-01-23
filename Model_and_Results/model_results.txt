@@ -1,0 +1,4 @@
+Best parameters: {'bootstrap': True, 'max_depth': 90, 'max_features': 3, 'min_samples_leaf': 5, 'min_samples_split': 12, 'n_estimators': 300}
+Mean absolute error: 0.04536238717972146
+MAPE: 1.199386515034086
+MAPE % : 119.94
