@@ -23,3 +23,23 @@ To get started with Staircase Speed Estimation, follow these simple steps:
 
    ```bash
    git clone https://github.com/your-username/staircase-speed-estimation.git
+   ```
+   
+2. Navigate to the project directory:
+
+   ```bash
+   cd staircase-speed-estimation
+   ```
+   
+ 3. Ensure you have the HMDB dataset downloaded and copied onto the 'Dataset' folder within the project directory.
+ 4. Run the following command to install the required packages:
+	```bash
+	pip install -r requirements.txt
+	```
+
+## Usage
+After completing the installation, you can run the main script to start estimating staircase speed. Execute the following command:
+
+```bash
+python main.py
+```
