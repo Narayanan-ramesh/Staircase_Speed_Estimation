@@ -79,7 +79,7 @@ def data_extraction(video_list):
         right_foot_list = []
         left_foot_list = []
         frame_count = 0
-        video_path = r'D:\StairCase_Estimation\climb_stairs_org' + r'\\' + video_path
+        video_path = r'D:\StairCase_Estimation\Dataset' + r'\\' + video_path
 
         vc = cv2.VideoCapture(video_path)
         fps = vc.get(cv2.CAP_PROP_FPS)
@@ -298,7 +298,7 @@ def testing_pipeline():
     # For each video - compute magnitude and angle vector , convolution result, total duration
     for idx,video_path in enumerate(validation_video_list):
         # Get a VideoCapture object from video and store it in vs
-        video_path = r'D:\StairCase_Estimation\climb_stairs_org\\' + video_path
+        video_path = r'D:\StairCase_Estimation\Dataset\\' + video_path
         convolution_result_list = []
         vc = cv2.VideoCapture(video_path)
         fps = vc.get(cv2.CAP_PROP_FPS)
