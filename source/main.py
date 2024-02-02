@@ -1,27 +1,29 @@
-import cv2
+import sys
 import numpy as np
 import os
 import cv2
 import mediapipe as mp
 import matplotlib.pyplot as plt
+import pandas as pd
 from scipy.signal import find_peaks
 from scipy.signal import convolve2d
-import pandas as pd
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
-import xgboost as xgb
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import log_loss
+# from sklearn.linear_model import LinearRegression
+# from sklearn.metrics import mean_squared_error
+# import xgboost as xgb
+# from sklearn.metrics import accuracy_score
+# from sklearn.metrics import log_loss
 import joblib
+
+pwd = os.getcwd()
 
 def get_list_videos():
     # Get video list in training and test sets
-    train_data_directory = r'D:\StairCase_Estimation\Train_Test_Validation_Split\folder_training'
-    test_data_directory = r'D:\StairCase_Estimation\Train_Test_Validation_Split\folder_test'
+    train_data_directory = pwd + r'\..\\Train_Test_Validation_Split\folder_training'
+    test_data_directory = pwd + r'\..\\Train_Test_Validation_Split\folder_test'
     train_video_list = os.listdir(train_data_directory)
     test_video_list = os.listdir(test_data_directory)
     return train_video_list+test_video_list
@@ -33,8 +35,8 @@ def compute_and_estimate_steps(video_file_name, distance_list, validation =False
     # return prev_distance, step_counter, threshold
     # Should fine tune parameters
     peaks = find_peaks(distance_list, prominence=0.02, distance=8)
-    print("Peaks position:", peaks[0])
-    print('Peak count', len(peaks))
+    # print("Peaks position:", peaks[0])
+    # print('Peak count', len(peaks))
 
     # Plotting
     plt.plot(distance_list)
@@ -43,9 +45,9 @@ def compute_and_estimate_steps(video_file_name, distance_list, validation =False
     [plt.axvline(p, c='C3', linewidth=0.3) for p in peaks[0]]
 
     if validation:
-        plt.savefig(r'D:\StairCase_Estimation\Model_and_Results\Validation_analysis_data' + video_file_name + '_peaks.png')
+        plt.savefig(pwd + r'\..\\Model_and_Results\Validation_analysis_data' + video_file_name + '_peaks.png')
     else:
-        plt.savefig(r'D:\StairCase_Estimation\Data_Extraction\Pose_estimation_peaks_Analysis\\' + video_file_name + '_peaks.png')
+        plt.savefig(pwd + r'\..\\Data_Extraction\Pose_estimation_peaks_Analysis\\' + video_file_name + '_peaks.png')
     plt.clf()
     return len(peaks[0])
 
@@ -64,7 +66,7 @@ def compute_speed(step_counter, duration):
 def data_extraction(video_list):
     # Open the file in write mode to create an empty file
     new_dict = {'File_name':[],'Magnitude':[],'Angle':[],'Shape':[],'Left_foot':[],'Right_foot':[],'Length_between_ankles':[], 'Convolution_result':[]}
-    # new_df.to_csv(r'D:\StairCase_Estimation\DenseFlow_Tensors\denseflow_pose_data.csv', mode='w', header=True, index=False)
+    # new_df.to_csv(pwd + r'\..\DenseFlow_Tensors\denseflow_pose_data.csv', mode='w', header=True, index=False)
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose()
 
@@ -79,7 +81,7 @@ def data_extraction(video_list):
         right_foot_list = []
         left_foot_list = []
         frame_count = 0
-        video_path = r'D:\StairCase_Estimation\Dataset' + r'\\' + video_path
+        video_path = pwd + r'\..\\Dataset' + r'\\' + video_path
 
         vc = cv2.VideoCapture(video_path)
         fps = vc.get(cv2.CAP_PROP_FPS)
@@ -173,7 +175,7 @@ def data_extraction(video_list):
         plt.xlabel('Timestamp (milliseconds)')
         plt.ylabel('Distance (pixels)')
         plt.title('Distance between Left and Right Feet over Time')
-        plt.savefig(r'D:\StairCase_Estimation\Data_Extraction\Pose_estimation_peaks_Analysis\\' + video_file_name + '_analysis.png')
+        plt.savefig(pwd + r'\..\\Data_Extraction\Pose_estimation_peaks_Analysis\\' + video_file_name + '_analysis.png')
         plt.clf()
         print('-------------  Percentage completed ---------------', round(float(idx / len(video_list) * 100), 2))
     denseflow_df = pd.DataFrame(new_dict)
@@ -189,7 +191,7 @@ def compute_convolution(magnitude, angle):
 
 def data_preparation_for_training(dense_flow_df):
     dense_flow_df = dense_flow_df[['Convolution_result','Length_between_ankles']]
-    dense_flow_df.to_csv(r'D:\StairCase_Estimation\Data_Extraction\machine_learning_data.csv', index=None)
+    dense_flow_df.to_csv(pwd + r'\..\\Data_Extraction\machine_learning_data.csv', index=None)
     return dense_flow_df
 
 def random_forest_regressor(dense_flow_df=None):
@@ -197,12 +199,12 @@ def random_forest_regressor(dense_flow_df=None):
     print('****************** Starting training ***************************')
     # Create a feature matrix X and target vector y
     if dense_flow_df is None:
-        dense_flow_df = pd.read_csv(r'D:\StairCase_Estimation\Data_Extraction\machine_learning_data.csv')
+        dense_flow_df = pd.read_csv(pwd + r'\..\Data_Extraction\machine_learning_data.csv')
     X = dense_flow_df['Convolution_result'].values.flatten()
     y = dense_flow_df['Length_between_ankles'].values.flatten()
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    pd.DataFrame({'Convolution_result':X_test,'Length_between_ankles':y_test}).to_csv(r"D:\StairCase_Estimation\Data_Extraction\test_data.csv")
+    pd.DataFrame({'Convolution_result':X_test,'Length_between_ankles':y_test}).to_csv(pwd + r"\..\Data_Extraction\test_data.csv")
     # Create a Random Forest regressor
     rf_regressor = RandomForestRegressor()
 
@@ -228,7 +230,7 @@ def random_forest_regressor(dense_flow_df=None):
     final_model.fit(X_train.reshape(-1,1), y_train)
 
     # Save model
-    joblib.dump(final_model, r"D:\StairCase_Estimation\Model_and_Results\Model\random_forest_model.joblib")
+    joblib.dump(final_model, pwd + r"\..\Model_and_Results\Model\random_forest_model.joblib")
     # Make predictions on the test set
     y_pred = final_model.predict(X_test.reshape(-1,1))
 
@@ -260,7 +262,7 @@ def random_forest_regressor(dense_flow_df=None):
     MAPE % : {round(MAPE * 100, 2)} % 
     ''')
     # Specify the file path
-    file_path = r"D:\StairCase_Estimation\Model_and_Results\model_results.txt"
+    file_path = pwd + r"\..\Model_and_Results\model_results.txt"
     values_to_save = [f'Best parameters: {best_params}',f'Mean absolute error: {mae}', f'MAPE: {MAPE}',f'MAPE % : {round(MAPE * 100, 2)}']
     # Open the file in write mode
     with open(file_path, "w") as file:
@@ -273,12 +275,12 @@ def random_forest_regressor(dense_flow_df=None):
     plt.xlabel('Feature')
     plt.ylabel('Target')
     plt.legend()
-    plt.savefig(r'D:\StairCase_Estimation\Model_and_Results\prediction_analysis.png')
+    plt.savefig(pwd + r'\..\Model_and_Results\prediction_analysis.png')
 
 def calculate_MSE():
-    model_path = r'D:\StairCase_Estimation\Model_and_Results\Model\random_forest_model.joblib'
+    model_path = pwd + r'\..\Model_and_Results\Model\random_forest_model.joblib'
     loaded_model = joblib.load(model_path)
-    test_df = pd.read_csv(r'D:\StairCase_Estimation\Data_Extraction\test_data.csv')
+    test_df = pd.read_csv(pwd + r'\..\Data_Extraction\test_data.csv')
     y_actual = test_df['Length_between_ankles']
     y_pred = loaded_model.predict(np.array(test_df['Convolution_result']).reshape(-1,1))
     MSE = np.square(np.subtract(y_actual, y_pred)).mean()
@@ -288,17 +290,17 @@ def calculate_MSE():
 
 def testing_pipeline():
     # Load the trained and saved model
-    model_path = r'D:\StairCase_Estimation\Model_and_Results\Model\random_forest_model.joblib'
+    model_path = pwd + r'\..\Model_and_Results\Model\random_forest_model.joblib'
     loaded_model = joblib.load(model_path)
 
     # Take validation files
-    validation_data_directory = r'D:\StairCase_Estimation\Train_Test_Validation_Split\folder_validation'
+    validation_data_directory = pwd + r'\..\Train_Test_Validation_Split\folder_validation'
     validation_video_list = os.listdir(validation_data_directory)
     final_data_dict = {'File_name':[],'Steps_climbed':[],'Speed in step/second':[],'Speed in meter/second':[]}
     # For each video - compute magnitude and angle vector , convolution result, total duration
     for idx,video_path in enumerate(validation_video_list):
         # Get a VideoCapture object from video and store it in vs
-        video_path = r'D:\StairCase_Estimation\Dataset\\' + video_path
+        video_path = pwd + r'\..\Dataset\\' + video_path
         convolution_result_list = []
         vc = cv2.VideoCapture(video_path)
         fps = vc.get(cv2.CAP_PROP_FPS)
@@ -363,17 +365,101 @@ def testing_pipeline():
         final_data_dict['Steps_climbed'].append(step_counter)
         final_data_dict['Speed in meter/second'].append(average_speed_mps)
         final_data_dict['Speed in step/second'].append(average_speed_steps_per_second)
-    pd.DataFrame(final_data_dict, index=None).to_csv(r'D:\StairCase_Estimation\Model_and_Results\validation_result.csv')
-if __name__ == '__main__':
-    dataset_acquired = False
-    if dataset_acquired:
-        random_forest_regressor()
-    else:
-        video_lists = get_list_videos()
-        dense_flow_df = data_extraction(video_lists)
-        entire_dataset = data_preparation_for_training(dense_flow_df)
-        # Perfrom XGBoost
-        random_forest_regressor(entire_dataset)
+    pd.DataFrame(final_data_dict, index=None).to_csv(pwd + r'\..\Model_and_Results\validation_result.csv')
 
-    testing_pipeline()
-    calculate_MSE()
+def calculate_speed_from_input(input_video_path):
+    # Load model
+    # Load the trained and saved model
+    input_video_path = pwd + r'\\' + input_video_path
+    model_path = pwd + r'\..\\Model_and_Results\Model\random_forest_model.joblib'
+    loaded_model = joblib.load(model_path)
+    # For each file compute dense flow convolution
+    # Take validation files
+    # final_data_dict = {'File_name':[],'Steps_climbed':[],'Speed in step/second':[],'Speed in meter/second':[]}
+    # For each video - compute magnitude and angle vector , convolution result, total duration
+    print('video path', input_video_path)
+    # Get a VideoCapture object from video and store it in vs
+    convolution_result_list = []
+    vc = cv2.VideoCapture(input_video_path)
+    fps = vc.get(cv2.CAP_PROP_FPS)
+    total_frames = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
+    video_time_elapsed = total_frames / fps
+    # Read first frame
+    ret, first_frame = vc.read()
+    if not ret:
+        return 'Video file corrupt', 'Video file corrupt'
+    # Convert to gray scale
+    prev_gray = cv2.cvtColor(first_frame, cv2.COLOR_BGR2GRAY)
+    # Create mask
+    mask = np.zeros_like(first_frame)
+    # Sets image saturation to maximum
+    mask[..., 1] = 255
+    # out = cv2.VideoWriter(output_video_path, -1, 1, (600, 600))
+    print('Starting dense flow computation for file ', input_video_path)
+    while (vc.isOpened()):
+        # Read a frame from video
+        ret, frame = vc.read()
+        if not ret:
+            break
+        # Convert the frame to RGB (MediaPipe requires RGB input)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Convert new frame format`s to gray scale and resize gray frame obtained
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # gray = cv2.resize(gray, None, fx=scale, fy=scale)
+        # Calculate dense optical flow by Farneback method
+        # https://docs.opencv.org/3.0-beta/modules/video/doc/motion_analysis_and_object_tracking.html#calcopticalflowfarneback
+        flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        # Compute the magnitude and angle of the 2D vectors
+        magnitude, angle = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+        convolution_result = compute_convolution(magnitude, angle)
+        convolution_result_list.append(convolution_result[0][0])
+        # Set image hue according to the optical flow direction
+        mask[..., 0] = angle * 180 / np.pi / 2
+        # Set image value according to the optical flow magnitude (normalized)
+        mask[..., 2] = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX)
+        # Convert HSV to RGB (BGR) color representation
+        prev_gray = gray
+        # Frame are read by intervals of 1 millisecond. The programs breaks out of the while loop when the user presses the 'q' key
+        if cv2.waitKey(10) & 0xFF == ord('q'):
+            break
+    # The following frees up resources and closes all windows
+    vc.release()
+    cv2.destroyAllWindows()
+    # Create a validation df with convoluted result
+    # Predict the distance between ankles
+    # Predict speed
+    # Predict the distance between ankles
+    # print(convolution_result_list)
+    y_pred = loaded_model.predict(np.array(convolution_result_list).reshape(-1, 1))
+    # For each video - create a list of distance bw ankles
+    step_counter = compute_and_estimate_steps(os.path.basename(input_video_path), y_pred, True)
+    # Return speed
+    # Compute the steps and speed
+    average_speed_mps, average_speed_steps_per_second = compute_speed(step_counter, video_time_elapsed)
+    # Create a csv that has video name and total speed in m/s and steps/second
+    return step_counter, average_speed_steps_per_second
+
+
+if __name__ == '__main__':
+    input_video_path = sys.argv[1:]
+    # dataset_acquired = False
+    # if dataset_acquired:
+    #     random_forest_regressor()
+    # else:
+    #     video_lists = get_list_videos()
+    #     dense_flow_df = data_extraction(video_lists)
+    #     entire_dataset = data_preparation_for_training(dense_flow_df)
+    #     # Perfrom XGBoost
+    #     random_forest_regressor(entire_dataset)
+    #
+    # testing_pipeline()
+    # calculate_MSE()
+    if not input_video_path:
+        print('Please specify an input video file...!')
+        sys.exit(1)
+    for file in input_video_path:
+        print(pwd)
+        print(file)
+        steps_climbed, speed_in_steps_per_second = calculate_speed_from_input(file)
+        print('Steps climbed ', steps_climbed)
+        print('Speed of ascent/descent', speed_in_steps_per_second)
