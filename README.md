@@ -29,6 +29,7 @@ To get started with Staircase Speed Estimation, follow these simple steps:
 
    ```bash
    cd staircase-speed-estimation
+   cd source
    ```
    
  3. Ensure you have the HMDB dataset downloaded and copied onto the 'Dataset' folder within the project directory.
@@ -41,5 +42,5 @@ To get started with Staircase Speed Estimation, follow these simple steps:
 After completing the installation, you can run the main script to start estimating staircase speed. Execute the following command:
 
 ```bash
-python main.py
+python main.py path_to_file_1 path_to_file_2 path_to_file_3 ... 
 ```
